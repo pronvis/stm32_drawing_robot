@@ -8,8 +8,7 @@
 #![deny(unsafe_code)]
 #![no_std]
 #![no_main]
-
-use panic_halt as _;
+#![feature(panic_info_message)]
 
 use stm32f1xx_hal::{
     prelude::*,
@@ -22,6 +21,16 @@ use cortex_m_rt::entry;
 use cortex_m_semihosting::{debug, hprintln};
 use embedded_hal::digital::v2::OutputPin;
 use cortex_m::asm::delay;
+use core::panic::PanicInfo;
+
+#[panic_handler]
+fn panic(_info: &PanicInfo) -> ! {
+    loop {
+        let location = _info.location();
+        let message = _info.message();
+        hprintln!("panic! location: {:?}, message: {:?}", location, message).unwrap();
+    }
+}
 
 #[entry]
 fn main() -> ! {
@@ -55,10 +64,10 @@ fn main() -> ! {
 
     hprintln!("clock: {:?}", clocks.sysclk().0).unwrap();
     loop {
-        delay(72.mhz().0 * 3);
+        delay(7200000 * 3);
         led.set_high().unwrap();
 
-        delay(72.mhz().0 * 5);
+        delay(7200000 * 5);
         led.set_low().unwrap();
     }
 }
