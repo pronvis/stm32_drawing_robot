@@ -45,7 +45,7 @@ fn main() -> ! {
     // in order to configure the port. For pins 0-7, crl should be passed instead.
     let mut led = gpioc.pc13.into_push_pull_output(&mut gpioc.crh);
 
-    let second = 7200000;
+    let second = 72_000_000;
     loop {
         delay(second * 3);
         led.set_high().unwrap();
