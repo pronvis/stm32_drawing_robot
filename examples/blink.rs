@@ -11,18 +11,21 @@
 
 use panic_halt as _;
 
-use nb::block;
-
 use stm32f1xx_hal::{
     prelude::*,
     pac,
     timer::Timer,
+    delay::Delay,
+    rcc,
 };
 use cortex_m_rt::entry;
+use cortex_m_semihosting::{debug, hprintln};
 use embedded_hal::digital::v2::OutputPin;
+use cortex_m::asm::delay;
 
 #[entry]
 fn main() -> ! {
+    hprintln!("Hello, world!").unwrap();
     // Get access to the core peripherals from the cortex-m crate
     let cp = cortex_m::Peripherals::take().unwrap();
     // Get access to the device specific peripherals from the peripheral access crate
@@ -35,7 +38,13 @@ fn main() -> ! {
 
     // Freeze the configuration of all the clocks in the system and store the frozen frequencies in
     // `clocks`
-    let clocks = rcc.cfgr.freeze(&mut flash.acr);
+    let clocks = rcc
+        .cfgr
+        .use_hse(8.mhz())
+        .sysclk(72.mhz())
+        .pclk1(36.mhz())
+        .pclk2(72.mhz())
+        .freeze(&mut flash.acr);
 
     // Acquire the GPIOC peripheral
     let mut gpioc = dp.GPIOC.split(&mut rcc.apb2);
@@ -43,14 +52,13 @@ fn main() -> ! {
     // Configure gpio C pin 13 as a push-pull output. The `crh` register is passed to the function
     // in order to configure the port. For pins 0-7, crl should be passed instead.
     let mut led = gpioc.pc13.into_push_pull_output(&mut gpioc.crh);
-    // Configure the syst timer to trigger an update every second
-    let mut timer = Timer::syst(cp.SYST, &clocks).start_count_down(1.hz());
 
-    // Wait for the timer to trigger an update and change the state of the LED
+    hprintln!("clock: {:?}", clocks.sysclk().0).unwrap();
     loop {
-        block!(timer.wait()).unwrap();
+        delay(72.mhz().0 * 3);
         led.set_high().unwrap();
-        block!(timer.wait()).unwrap();
+
+        delay(72.mhz().0 * 5);
         led.set_low().unwrap();
     }
 }
