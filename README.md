@@ -13,7 +13,7 @@ in gdb:
 - `load`
 - `continue`
 
-or just `gdb -x openocd.gdb target/thumbv7m-none-eabi/debug/examples/hello` then enter and `continue`
+or just `gdb -x openocd.gdb target/thumbv7m-none-eabi/debug/examples/blink` then enter and `continue`
 
 # Utils to install
 - `brew install stlink`, so to have `st-flash` to upload code without openocd & gdb
