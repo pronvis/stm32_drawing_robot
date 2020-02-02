@@ -62,7 +62,7 @@ fn main() -> ! {
     // in order to configure the port. For pins 0-7, crl should be passed instead.
     let mut led = gpioc.pc13.into_push_pull_output(&mut gpioc.crh);
 
-    hprintln!("clock: {:?}", clocks.sysclk().0).unwrap();
+    hprintln!("clock: {:?}", clocks.pclk2().0).unwrap();
     loop {
         delay(7200000 * 3);
         led.set_high().unwrap();
