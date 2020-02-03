@@ -13,7 +13,7 @@ use nb::block;
 
 use core::panic::PanicInfo;
 use cortex_m_rt::entry;
-use embedded_graphics::{image::Image, prelude::*};
+use embedded_graphics::{image::Image, prelude::*, pixelcolor::BinaryColor};
 use stm32f1xx_hal::i2c::{BlockingI2c, DutyCycle, Mode};
 use stm32f1xx_hal::prelude::*;
 use stm32f1xx_hal::stm32;
@@ -26,9 +26,6 @@ use stm32f1xx_hal::gpio::gpiob::{PB8, PB9};
 use stm32f1xx_hal::gpio::{Alternate, OpenDrain};
 use stm32f1::stm32f103::I2C1;
 
-use embedded_graphics::image::Image1BPP;
-use embedded_graphics::pixelcolor::PixelColorU8;
-
 type OledDisplay = GraphicsMode<I2cInterface<BlockingI2c<I2C1, (PB8<Alternate<OpenDrain>>, PB9<Alternate<OpenDrain>>)>>>;
 
 #[entry]
@@ -39,7 +36,13 @@ fn main() -> ! {
     let mut flash = dp.FLASH.constrain();
     let mut rcc: stm32f1xx_hal::rcc::Rcc = dp.RCC.constrain();
 
-    let clocks = rcc.cfgr.freeze(&mut flash.acr);
+    let clocks = rcc
+        .cfgr
+        .use_hse(8.mhz())
+        .sysclk(72.mhz())
+        .pclk1(36.mhz())
+        .pclk2(72.mhz())
+        .freeze(&mut flash.acr);
 
     let mut afio: stm32f1xx_hal::afio::Parts = dp.AFIO.constrain(&mut rcc.apb2);
 
@@ -65,22 +68,22 @@ fn main() -> ! {
     );
 
     let mut disp: OledDisplay = Builder::new()
-        .with_size(DisplaySize::Display128x64)
+        .size(DisplaySize::Display128x64)
         .with_rotation(DisplayRotation::Rotate0)
         .with_i2c_addr(0x3c)
         .connect_i2c(i2c).into();
     disp.init().unwrap();
 
-    let orig_image: Image1BPP<PixelColorU8> = Image::new(include_bytes!("./rust.raw"), 64, 64);
+    let orig_image: Image<BinaryColor> = Image::new(include_bytes!("./rust.raw"), 64, 64);
 
-    let mut timer = Timer::syst(cp.SYST, &clocks).start_count_down(20.hz());
+    let mut timer = Timer::syst(cp.SYST, &clocks).start_count_down(200.hz());
     let mut x_shift = 0;
 
     loop {
         block!(timer.wait()).unwrap();
         disp.clear();
 
-        let shifted_image = orig_image.translate(Coord::new(x_shift, 0));
+        let shifted_image = orig_image.translate(Point::new(x_shift, 0));
         disp.draw(shifted_image.into_iter());
         disp.flush().unwrap();
 
