@@ -1,3 +1,10 @@
+//! Image was created with ImageMagick:
+//!
+//! ```bash
+//! convert rust.png -depth 1 gray:rust.raw
+//! ```
+
+
 #![no_std]
 #![no_main]
 #![feature(panic_info_message)]
