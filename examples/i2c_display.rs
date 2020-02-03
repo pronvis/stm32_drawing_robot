@@ -3,7 +3,6 @@
 #![feature(panic_info_message)]
 
 use nb::block;
-//use cortex_m_semihosting::{debug, hprintln};
 
 use core::panic::PanicInfo;
 use cortex_m_rt::entry;
@@ -79,12 +78,12 @@ fn main() -> ! {
     }
 }
 
-
+//use cortex_m_semihosting::{debug, hprintln};
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
     loop {
-        let location = _info.location();
-        let message = _info.message();
-//        hprintln!("panic! location: {:?}, message: {:?}", location, message).unwrap();
+        let _location = _info.location();
+        let _message = _info.message();
+//        hprintln!("panic! location: {:?}, message: {:?}", _location, _message).unwrap();
     }
 }
