@@ -64,12 +64,14 @@ fn main() -> ! {
         1000,
     );
 
-    let mut disp: OledDisplay = Builder::new().connect_i2c(i2c).into();
+    let mut disp: OledDisplay = Builder::new()
+        .with_size(DisplaySize::Display128x64)
+        .with_rotation(DisplayRotation::Rotate0)
+        .with_i2c_addr(0x3c)
+        .connect_i2c(i2c).into();
+    disp.init().unwrap();
 
     let orig_image: Image1BPP<PixelColorU8> = Image::new(include_bytes!("./rust.raw"), 64, 64);
-
-    disp.draw(orig_image.into_iter());
-    disp.flush().unwrap();
 
     let mut timer = Timer::syst(cp.SYST, &clocks).start_count_down(20.hz());
     let mut x_shift = 0;
@@ -77,11 +79,13 @@ fn main() -> ! {
     loop {
         block!(timer.wait()).unwrap();
         disp.clear();
-        x_shift += 1;
-        if x_shift >= 128 {x_shift = 0;}
+
         let shifted_image = orig_image.translate(Coord::new(x_shift, 0));
         disp.draw(shifted_image.into_iter());
         disp.flush().unwrap();
+
+        x_shift += 1;
+        if x_shift >= 128 {x_shift = 0;}
     }
 }
 
