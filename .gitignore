@@ -11,3 +11,6 @@ target/
 !.vscode/*.svd
 !.vscode/launch.json
 !.vscode/tasks.json
+
+#all binary files
+*.bin
