@@ -10,7 +10,7 @@ if [ "$1" == '-e' ]  || [ "$1" == '--example' ]; then
 
 	example_name=$2
 	cargo_addition='--example '$example_name
-  elf_file='target/thumbv7m-none-eabi/release/examples/'$example_name
+  elf_file=$CARGO_TARGET_DIR'/thumbv7m-none-eabi/release/examples/'$example_name
   bin_filepath=$3
 else
 	if [ $arguments_count != 1 ]; then
@@ -18,7 +18,7 @@ else
 		exit 1
 	fi
 
-	elf_file=target/thumbv7m-none-eabi/release/bare-metal
+	elf_file=$CARGO_TARGET_DIR/thumbv7m-none-eabi/release/bare-metal
 	bin_filepath=$1
 fi
 
