@@ -4,7 +4,6 @@
 //! convert rust.png -depth 1 gray:rust.raw
 //! ```
 
-
 #![no_std]
 #![no_main]
 #![feature(panic_info_message)]
@@ -13,9 +12,9 @@ use nb::block;
 
 use core::panic::PanicInfo;
 use cortex_m_rt::entry;
-use embedded_graphics::{image::Image, prelude::*, pixelcolor::BinaryColor};
-use embedded_graphics::fonts::{Font6x8, Text, Font6x12};
+use embedded_graphics::fonts::{Font6x12, Font6x8, Text};
 use embedded_graphics::style::TextStyleBuilder;
+use embedded_graphics::{image::Image, pixelcolor::BinaryColor, prelude::*};
 use stm32f1xx_hal::i2c::{BlockingI2c, DutyCycle, Mode};
 use stm32f1xx_hal::prelude::*;
 use stm32f1xx_hal::stm32;
@@ -23,12 +22,14 @@ use stm32f1xx_hal::stm32;
 use ssd1306::prelude::*;
 use ssd1306::Builder;
 
-use stm32f1xx_hal::timer::Timer;
+use stm32f1::stm32f103::I2C1;
 use stm32f1xx_hal::gpio::gpiob::{PB8, PB9};
 use stm32f1xx_hal::gpio::{Alternate, OpenDrain};
-use stm32f1::stm32f103::I2C1;
+use stm32f1xx_hal::timer::Timer;
 
-type OledDisplay = GraphicsMode<I2cInterface<BlockingI2c<I2C1, (PB8<Alternate<OpenDrain>>, PB9<Alternate<OpenDrain>>)>>>;
+type OledDisplay = GraphicsMode<
+    I2cInterface<BlockingI2c<I2C1, (PB8<Alternate<OpenDrain>>, PB9<Alternate<OpenDrain>>)>>,
+>;
 
 #[entry]
 fn main() -> ! {
@@ -52,28 +53,29 @@ fn main() -> ! {
     let scl: PB8<Alternate<OpenDrain>> = gpiob.pb8.into_alternate_open_drain(&mut gpiob.crh);
     let sda: PB9<Alternate<OpenDrain>> = gpiob.pb9.into_alternate_open_drain(&mut gpiob.crh);
 
-
-    let i2c: BlockingI2c<I2C1, (PB8<Alternate<OpenDrain>>, PB9<Alternate<OpenDrain>>)> = BlockingI2c::i2c1(
-        dp.I2C1,
-        (scl, sda),
-        &mut afio.mapr,
-        Mode::Fast {
-            frequency: 400_000.hz(),
-            duty_cycle: DutyCycle::Ratio2to1,
-        },
-        clocks,
-        &mut rcc.apb1,
-        1000,
-        100,
-        1000,
-        1000,
-    );
+    let i2c: BlockingI2c<I2C1, (PB8<Alternate<OpenDrain>>, PB9<Alternate<OpenDrain>>)> =
+        BlockingI2c::i2c1(
+            dp.I2C1,
+            (scl, sda),
+            &mut afio.mapr,
+            Mode::Fast {
+                frequency: 400_000.hz(),
+                duty_cycle: DutyCycle::Ratio2to1,
+            },
+            clocks,
+            &mut rcc.apb1,
+            1000,
+            100,
+            1000,
+            1000,
+        );
 
     let mut disp: OledDisplay = Builder::new()
         .size(DisplaySize::Display128x64)
         .with_rotation(DisplayRotation::Rotate0)
         .with_i2c_addr(0x3c)
-        .connect_i2c(i2c).into();
+        .connect_i2c(i2c)
+        .into();
     disp.init().unwrap();
 
     let orig_image: Image<BinaryColor> = Image::new(include_bytes!("./rust.raw"), 64, 64);
@@ -92,11 +94,15 @@ fn main() -> ! {
         disp.flush().unwrap();
 
         x_shift += 1;
-        if x_shift >= 128 {x_shift = 0;}
+        if x_shift >= 128 {
+            x_shift = 0;
+        }
     }
 }
 
+// src/libcore/unicode/mod.rs
 fn draw_text(disp: &mut OledDisplay) {
+    // use core::unicode;
     let mut buf = [0u8; 64];
 
     let text_style_1 = TextStyleBuilder::new(Font6x12)
@@ -106,12 +112,12 @@ fn draw_text(disp: &mut OledDisplay) {
     let text_1: &str = write_to::show(
         &mut buf,
         format_args!("Hello world! {:?}", text_style_1.font),
-    ).unwrap();
+    )
+    .unwrap();
 
     Text::new(text_1, Point::zero())
         .into_styled(text_style_1)
         .draw(disp);
-
 
     let text_style_2 = TextStyleBuilder::new(Font6x8)
         .text_color(BinaryColor::On)
@@ -120,12 +126,12 @@ fn draw_text(disp: &mut OledDisplay) {
     let text_2: &str = write_to::show(
         &mut buf,
         format_args!("Hello Rust! {:?}", text_style_2.font),
-    ).unwrap();
+    )
+    .unwrap();
 
     Text::new(text_2, Point::new(0, 16))
         .into_styled(text_style_2)
         .draw(disp);
-
 }
 
 //use cortex_m_semihosting::{debug, hprintln};
@@ -134,12 +140,9 @@ fn panic(_info: &PanicInfo) -> ! {
     loop {
         let _location = _info.location();
         let _message = _info.message();
-//        hprintln!("panic! location: {:?}, message: {:?}", _location, _message).unwrap();
+        //        hprintln!("panic! location: {:?}, message: {:?}", _location, _message).unwrap();
     }
 }
-
-
-
 
 // from https://stackoverflow.com/questions/50200268/how-can-i-use-the-format-macro-in-a-no-std-environment
 pub mod write_to {
