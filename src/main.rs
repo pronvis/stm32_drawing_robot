@@ -8,9 +8,9 @@ use nb::block;
 
 use core::panic::PanicInfo;
 use cortex_m_rt::entry;
-use embedded_graphics::{image::Image, prelude::*, pixelcolor::BinaryColor};
-use embedded_graphics::fonts::{Font6x8, Text, Font6x12};
+use embedded_graphics::fonts::{Font6x12, Font6x8, Text};
 use embedded_graphics::style::TextStyleBuilder;
+use embedded_graphics::{image::Image, pixelcolor::BinaryColor, prelude::*};
 use stm32f1xx_hal::i2c::{BlockingI2c, DutyCycle, Mode};
 use stm32f1xx_hal::prelude::*;
 use stm32f1xx_hal::stm32;
@@ -18,12 +18,14 @@ use stm32f1xx_hal::stm32;
 use ssd1306::prelude::*;
 use ssd1306::Builder;
 
-use stm32f1xx_hal::timer::Timer;
+use stm32f1::stm32f103::I2C1;
 use stm32f1xx_hal::gpio::gpiob::{PB8, PB9};
 use stm32f1xx_hal::gpio::{Alternate, OpenDrain};
-use stm32f1::stm32f103::I2C1;
+use stm32f1xx_hal::timer::Timer;
 
-type OledDisplay = GraphicsMode<I2cInterface<BlockingI2c<I2C1, (PB8<Alternate<OpenDrain>>, PB9<Alternate<OpenDrain>>)>>>;
+type OledDisplay = GraphicsMode<
+    I2cInterface<BlockingI2c<I2C1, (PB8<Alternate<OpenDrain>>, PB9<Alternate<OpenDrain>>)>>,
+>;
 
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
@@ -62,33 +64,33 @@ fn main() -> ! {
     let scl: PB8<Alternate<OpenDrain>> = gpiob.pb8.into_alternate_open_drain(&mut gpiob.crh);
     let sda: PB9<Alternate<OpenDrain>> = gpiob.pb9.into_alternate_open_drain(&mut gpiob.crh);
 
-
-    let i2c: BlockingI2c<I2C1, (PB8<Alternate<OpenDrain>>, PB9<Alternate<OpenDrain>>)> = BlockingI2c::i2c1(
-        dp.I2C1,
-        (scl, sda),
-        &mut afio.mapr,
-        Mode::Fast {
-            frequency: 400_000.hz(),
-            duty_cycle: DutyCycle::Ratio2to1,
-        },
-        clocks,
-        &mut rcc.apb1,
-        1000,
-        100,
-        1000,
-        1000,
-    );
+    let i2c: BlockingI2c<I2C1, (PB8<Alternate<OpenDrain>>, PB9<Alternate<OpenDrain>>)> =
+        BlockingI2c::i2c1(
+            dp.I2C1,
+            (scl, sda),
+            &mut afio.mapr,
+            Mode::Fast {
+                frequency: 400_000.hz(),
+                duty_cycle: DutyCycle::Ratio2to1,
+            },
+            clocks,
+            &mut rcc.apb1,
+            1000,
+            100,
+            1000,
+            1000,
+        );
 
     let mut disp: OledDisplay = Builder::new()
         .size(DisplaySize::Display128x64)
         .with_rotation(DisplayRotation::Rotate0)
         .with_i2c_addr(0x3c)
-        .connect_i2c(i2c).into();
+        .connect_i2c(i2c)
+        .into();
     disp.init().unwrap();
 
     let mut timer = Timer::syst(cp.SYST, &clocks).start_count_down(200.hz());
     let lines_to_draw = draw_something();
-
 
     let text_style = TextStyleBuilder::new(Font6x8)
         .text_color(BinaryColor::On)
@@ -99,17 +101,16 @@ fn main() -> ! {
 
         for line in lines_to_draw {
             match line {
-                LineTo::Fly(_) => {},
-                LineTo::Erase(_) => {},
+                LineTo::Fly(_) => {}
+                LineTo::Erase(_) => {}
                 LineTo::Draw(draw) => {
                     Text::new(draw.x.to_str(), Point::zero())
                         .into_styled(text_style)
                         .draw(&mut disp);
                     disp.flush().unwrap();
-                },
+                }
             }
         }
-
     }
 }
 

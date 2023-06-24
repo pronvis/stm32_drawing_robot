@@ -2,9 +2,9 @@
 #![no_std]
 #![feature(panic_info_message)]
 
+use core::panic::PanicInfo;
 use cortex_m_rt::entry;
 use cortex_m_semihosting::{debug, hprintln};
-use core::panic::PanicInfo;
 use stm32f1xx_hal;
 
 #[panic_handler]
@@ -29,5 +29,4 @@ fn main() -> ! {
             hprintln!("current x = {}", x).unwrap();
         }
     }
-
 }
